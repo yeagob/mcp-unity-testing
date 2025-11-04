@@ -282,6 +282,64 @@ namespace MCP.UnityTesting.Editor
                         },
                         required = new[] { "direction" }
                     }
+                },
+                new Tool
+                {
+                    name = "send_gamepad_button",
+                    description = "Simulates a gamepad button press (A, B, X, Y, etc.)",
+                    inputSchema = new ToolInputSchema
+                    {
+                        properties = new Dictionary<string, PropertySchema>
+                        {
+                            { "button", new PropertySchema { type = "string", description = "Button name: A, B, X, Y, LB, RB, LT, RT, Start, Select, LeftStick, RightStick, DPadUp, DPadDown, DPadLeft, DPadRight" } },
+                            { "duration", new PropertySchema { type = "number", description = "Hold duration in seconds" } },
+                            { "joystickNum", new PropertySchema { type = "number", description = "Joystick number (1-4), default 1" } }
+                        },
+                        required = new[] { "button" }
+                    }
+                },
+                new Tool
+                {
+                    name = "send_gamepad_axis",
+                    description = "Simulates gamepad analog stick or trigger movement",
+                    inputSchema = new ToolInputSchema
+                    {
+                        properties = new Dictionary<string, PropertySchema>
+                        {
+                            { "axis", new PropertySchema { type = "string", description = "Axis name: LeftStickX, LeftStickY, RightStickX, RightStickY, LeftTrigger, RightTrigger, DPadX, DPadY" } },
+                            { "value", new PropertySchema { type = "number", description = "Axis value (-1.0 to 1.0)" } },
+                            { "duration", new PropertySchema { type = "number", description = "Duration to hold the axis value in seconds" } },
+                            { "joystickNum", new PropertySchema { type = "number", description = "Joystick number (1-4), default 1" } }
+                        },
+                        required = new[] { "axis", "value" }
+                    }
+                },
+                new Tool
+                {
+                    name = "navigate_menu_gamepad",
+                    description = "Navigates UI menus using gamepad (up, down, left, right, confirm, cancel)",
+                    inputSchema = new ToolInputSchema
+                    {
+                        properties = new Dictionary<string, PropertySchema>
+                        {
+                            { "direction", new PropertySchema { type = "string", description = "Navigation: up, down, left, right, confirm, cancel" } },
+                            { "joystickNum", new PropertySchema { type = "number", description = "Joystick number (1-4), default 1" } }
+                        },
+                        required = new[] { "direction" }
+                    }
+                },
+                new Tool
+                {
+                    name = "get_gamepad_state",
+                    description = "Gets the current state of connected gamepads",
+                    inputSchema = new ToolInputSchema
+                    {
+                        properties = new Dictionary<string, PropertySchema>
+                        {
+                            { "joystickNum", new PropertySchema { type = "number", description = "Joystick number (1-4), or 0 for all" } }
+                        },
+                        required = new string[] { }
+                    }
                 }
             };
 

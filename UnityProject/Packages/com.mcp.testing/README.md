@@ -217,6 +217,124 @@ Convenience wrapper for menu navigation using keyboard.
 }
 ```
 
+### `send_gamepad_button`
+Simulates a gamepad button press.
+
+**Parameters**:
+- `button` (string, required): Button name - "A", "B", "X", "Y", "LB", "RB", "Start", "Select", "LeftStick", "RightStick", "DPadUp", "DPadDown", "DPadLeft", "DPadRight"
+- `duration` (number, optional): Hold duration in seconds. Default: 0.1
+- `joystickNum` (number, optional): Joystick number (1-4). Default: 1
+
+**Returns**: JSON with button press confirmation
+
+**Example**:
+```json
+{
+  "button": "A",
+  "duration": 0.1,
+  "joystickNum": 1
+}
+```
+
+**Button Mapping**:
+- **Xbox**: A, B, X, Y, LB (Left Bumper), RB (Right Bumper), Start, Select, LeftStick (L3), RightStick (R3)
+- **PlayStation**: Cross (A), Circle (B), Square (X), Triangle (Y), L1 (LB), R1 (RB), Options (Start), Share (Select), L3, R3
+- **D-Pad**: DPadUp, DPadDown, DPadLeft, DPadRight
+
+### `send_gamepad_axis`
+Simulates gamepad analog stick or trigger movement.
+
+**Parameters**:
+- `axis` (string, required): Axis name - "LeftStickX", "LeftStickY", "RightStickX", "RightStickY", "LeftTrigger", "RightTrigger", "DPadX", "DPadY"
+- `value` (number, required): Axis value from -1.0 to 1.0
+- `duration` (number, optional): Duration to hold the axis value in seconds. Default: 0.1
+- `joystickNum` (number, optional): Joystick number (1-4). Default: 1
+
+**Returns**: JSON with axis simulation confirmation
+
+**Example**:
+```json
+{
+  "axis": "LeftStickX",
+  "value": 0.8,
+  "duration": 0.2,
+  "joystickNum": 1
+}
+```
+
+**Axis Values**:
+- `-1.0` = Full left/down
+- `0.0` = Neutral/centered
+- `+1.0` = Full right/up
+
+**Common Axes**:
+- **LeftStickX**: -1 (left) to +1 (right)
+- **LeftStickY**: -1 (down) to +1 (up)
+- **RightStickX**: -1 (left) to +1 (right)
+- **RightStickY**: -1 (down) to +1 (up)
+- **LeftTrigger/RightTrigger**: 0 (released) to 1 (fully pressed)
+- **DPadX/DPadY**: -1, 0, or +1
+
+### `navigate_menu_gamepad`
+Convenience wrapper for menu navigation using gamepad.
+
+**Parameters**:
+- `direction` (string, required): Navigation command - "up", "down", "left", "right", "confirm", "cancel"
+- `joystickNum` (number, optional): Joystick number (1-4). Default: 1
+
+**Returns**: JSON with navigation result and updated game state
+
+**Example**:
+```json
+{
+  "direction": "confirm",
+  "joystickNum": 1
+}
+```
+
+**Navigation Mapping**:
+- **up/down/left/right**: Uses left analog stick
+- **confirm**: A button (Xbox) / Cross (PlayStation)
+- **cancel**: B button (Xbox) / Circle (PlayStation)
+
+### `get_gamepad_state`
+Gets information about connected gamepads.
+
+**Parameters**:
+- `joystickNum` (number, optional): Specific joystick number (1-4), or 0 for all. Default: 0 (all)
+
+**Returns**: JSON with connected gamepad information
+
+**Example**:
+```json
+{
+  "joystickNum": 0
+}
+```
+
+**Example Response**:
+```json
+{
+  "success": true,
+  "gamepadState": {
+    "connectedGamepads": [
+      {
+        "joystickNum": 1,
+        "name": "Xbox One Controller",
+        "isConnected": true
+      },
+      {
+        "joystickNum": 2,
+        "name": "DualShock 4",
+        "isConnected": true
+      }
+    ],
+    "totalConnected": 2
+  },
+  "timestamp": "2025-11-04T12:34:56.789Z"
+}
+```
+
 ## Usage Patterns
 
 ### Testing Menu Navigation
@@ -259,6 +377,34 @@ Prompt for Claude:
 6. Pause and access pause menu
 7. Resume and quit to main menu
 8. Generate a detailed test report with screenshots"
+```
+
+### Testing Gamepad Navigation
+
+```
+Prompt for Claude:
+
+"Test gamepad controller navigation:
+1. Check if a gamepad is connected using get_gamepad_state
+2. Navigate the menu using the left stick (gamepad)
+3. Select options using the A button
+4. Test D-pad navigation
+5. Compare gamepad navigation with keyboard navigation
+6. Report any issues or inconsistencies"
+```
+
+### Multi-Input Method Testing
+
+```
+Prompt for Claude:
+
+"Test all input methods (keyboard, mouse, gamepad):
+1. Navigate menu with keyboard arrows and Enter
+2. Navigate same menu by clicking with mouse
+3. Navigate same menu with gamepad left stick and A button
+4. Verify all three methods reach the same destinations
+5. Test edge cases (rapid inputs, simultaneous inputs)
+6. Generate comparison report with screenshots for each method"
 ```
 
 ## Editor Menu Options

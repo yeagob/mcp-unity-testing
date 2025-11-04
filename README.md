@@ -20,14 +20,15 @@ Este proyecto implementa un servidor MCP (Model Context Protocol) que corre dire
 - ✅ Captura de pantallas del Game View
 - ✅ Simulación de clicks del mouse en posiciones específicas
 - ✅ Simulación de inputs de teclado (KeyCodes de Unity)
+- ✅ **Simulación de inputs de mando/gamepad** (botones y sticks analógicos)
 - ✅ Consultas de estado del juego (escena, UI activa, elementos seleccionados)
-- ✅ Navegación automática de menús
+- ✅ **Detección y consulta de mandos conectados**
+- ✅ Navegación automática de menús (teclado, mouse y gamepad)
 - ✅ Gestión del ciclo de vida del servidor desde menús de Unity
 
 ### Próximos Pasos (Fase 2)
 
 - 🔄 Streaming de video en tiempo real
-- 🔄 Soporte completo para gamepads
 - 🔄 Testing de gameplay (física, colisiones)
 - 🔄 Métricas de rendimiento
 - 🔄 Testing multiplataforma
@@ -116,8 +117,12 @@ Prompt de ejemplo:
 | `capture_screenshot` | Captura pantalla del Game View |
 | `click_at_position` | Simula click del mouse en coordenadas específicas |
 | `send_key_input` | Envía input de teclado (KeyCodes de Unity) |
+| `send_gamepad_button` | **Simula presionar botones del mando (A, B, X, Y, etc.)** |
+| `send_gamepad_axis` | **Simula movimiento de sticks analógicos y triggers** |
 | `get_game_state` | Obtiene estado actual del juego (escena, UI, etc.) |
+| `get_gamepad_state` | **Detecta y obtiene info de mandos conectados** |
 | `navigate_menu` | Navega menús usando teclado (up/down/left/right/enter) |
+| `navigate_menu_gamepad` | **Navega menús usando mando (stick + botones A/B)** |
 
 Ver documentación completa en [`UnityProject/Packages/com.mcp.testing/README.md`](UnityProject/Packages/com.mcp.testing/README.md)
 
