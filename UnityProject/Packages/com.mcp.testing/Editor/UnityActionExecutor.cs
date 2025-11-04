@@ -49,6 +49,7 @@ namespace MCP.UnityTesting.Editor
                 "send_gamepad_axis" => ExecuteSendGamepadAxis(arguments),
                 "navigate_menu_gamepad" => ExecuteNavigateMenuGamepad(arguments),
                 "get_gamepad_state" => ExecuteGetGamepadState(arguments),
+                "get_scene_snapshot" => ExecuteGetSceneSnapshot(arguments),
                 _ => throw new Exception($"Unknown tool: {toolName}")
             };
         }
@@ -864,6 +865,370 @@ namespace MCP.UnityTesting.Editor
             }
         }
 
+        private string ExecuteGetSceneSnapshot(Dictionary<string, object> args)
+        {
+            var includeHierarchy = GetBoolArg(args, "includeHierarchy", true);
+            var includeComponents = GetBoolArg(args, "includeComponents", true);
+            var includeUI = GetBoolArg(args, "includeUI", true);
+            var includePerformance = GetBoolArg(args, "includePerformance", true);
+            var maxDepth = GetIntArg(args, "maxDepth", 10);
+
+            try
+            {
+                SceneSnapshotInfo snapshot = null;
+                bool completed = false;
+                Exception error = null;
+
+                RunOnMainThread(() =>
+                {
+                    try
+                    {
+                        var scene = SceneManager.GetActiveScene();
+
+                        snapshot = new SceneSnapshotInfo
+                        {
+                            timestamp = DateTime.UtcNow.ToString("o"),
+                            sceneInfo = new SceneInfo
+                            {
+                                name = scene.name,
+                                path = scene.path,
+                                buildIndex = scene.buildIndex,
+                                isLoaded = scene.isLoaded,
+                                isDirty = scene.isDirty,
+                                rootCount = scene.rootCount
+                            },
+                            playMode = new PlayModeInfo
+                            {
+                                isPlaying = EditorApplication.isPlaying,
+                                isPaused = EditorApplication.isPaused,
+                                isCompiling = EditorApplication.isCompiling,
+                                timeSinceStartup = (float)EditorApplication.timeSinceStartup
+                            }
+                        };
+
+                        // Hierarchy
+                        if (includeHierarchy)
+                        {
+                            var rootObjects = scene.GetRootGameObjects();
+                            var hierarchyList = new List<object>();
+                            foreach (var rootObj in rootObjects)
+                            {
+                                if (rootObj.activeInHierarchy)
+                                {
+                                    hierarchyList.Add(BuildGameObjectInfo(rootObj, 0, maxDepth, includeComponents));
+                                }
+                            }
+                            snapshot.hierarchy = hierarchyList.ToArray();
+                        }
+
+                        // UI Hierarchy
+                        if (includeUI)
+                        {
+                            snapshot.uiHierarchy = BuildUIHierarchy(maxDepth);
+                        }
+
+                        // Cameras
+                        var cameras = UnityEngine.Object.FindObjectsOfType<Camera>();
+                        var cameraList = new List<object>();
+                        foreach (var cam in cameras)
+                        {
+                            if (cam.enabled)
+                            {
+                                cameraList.Add(new
+                                {
+                                    name = cam.gameObject.name,
+                                    isActive = cam.gameObject.activeInHierarchy,
+                                    fieldOfView = cam.fieldOfView,
+                                    orthographic = cam.orthographic,
+                                    orthographicSize = cam.orthographicSize,
+                                    depth = cam.depth,
+                                    cullingMask = cam.cullingMask,
+                                    clearFlags = cam.clearFlags.ToString(),
+                                    targetDisplay = cam.targetDisplay
+                                });
+                            }
+                        }
+                        snapshot.cameras = cameraList.ToArray();
+
+                        // Lights
+                        var lights = UnityEngine.Object.FindObjectsOfType<Light>();
+                        var lightList = new List<object>();
+                        foreach (var light in lights)
+                        {
+                            if (light.enabled)
+                            {
+                                lightList.Add(new
+                                {
+                                    name = light.gameObject.name,
+                                    type = light.type.ToString(),
+                                    intensity = light.intensity,
+                                    range = light.range,
+                                    color = new { r = light.color.r, g = light.color.g, b = light.color.b }
+                                });
+                            }
+                        }
+                        snapshot.lights = lightList.ToArray();
+
+                        // Audio Sources
+                        var audioSources = UnityEngine.Object.FindObjectsOfType<AudioSource>();
+                        var audioList = new List<object>();
+                        foreach (var audio in audioSources)
+                        {
+                            audioList.Add(new
+                            {
+                                name = audio.gameObject.name,
+                                isPlaying = audio.isPlaying,
+                                clip = audio.clip != null ? audio.clip.name : "none",
+                                volume = audio.volume,
+                                loop = audio.loop,
+                                mute = audio.mute
+                            });
+                        }
+                        snapshot.audioSources = audioList.ToArray();
+
+                        // EventSystem & Input
+                        if (EventSystem.current != null)
+                        {
+                            snapshot.eventSystem = new
+                            {
+                                isActive = EventSystem.current.gameObject.activeInHierarchy,
+                                currentSelectedGameObject = EventSystem.current.currentSelectedGameObject != null
+                                    ? EventSystem.current.currentSelectedGameObject.name : "none",
+                                firstSelectedGameObject = EventSystem.current.firstSelectedGameObject != null
+                                    ? EventSystem.current.firstSelectedGameObject.name : "none"
+                            };
+                        }
+
+                        // Input State
+                        snapshot.inputState = new
+                        {
+                            mousePosition = new { x = Input.mousePosition.x, y = Input.mousePosition.y, z = Input.mousePosition.z },
+                            mousePresent = Input.mousePresent,
+                            touchSupported = Input.touchSupported,
+                            touchCount = Input.touchCount,
+                            anyKey = Input.anyKey,
+                            anyKeyDown = Input.anyKeyDown
+                        };
+
+                        // Gamepad State
+                        var joystickNames = Input.GetJoystickNames();
+                        var connectedGamepads = new List<object>();
+                        for (int i = 0; i < joystickNames.Length && i < 4; i++)
+                        {
+                            if (!string.IsNullOrEmpty(joystickNames[i]))
+                            {
+                                connectedGamepads.Add(new
+                                {
+                                    joystickNum = i + 1,
+                                    name = joystickNames[i]
+                                });
+                            }
+                        }
+                        snapshot.connectedGamepads = connectedGamepads.ToArray();
+
+                        // Performance Metrics
+                        if (includePerformance)
+                        {
+                            snapshot.performance = new
+                            {
+                                targetFrameRate = Application.targetFrameRate,
+                                vSyncCount = QualitySettings.vSyncCount,
+                                qualityLevel = QualitySettings.GetQualityLevel(),
+                                qualityLevelName = QualitySettings.names[QualitySettings.GetQualityLevel()],
+                                pixelLightCount = QualitySettings.pixelLightCount,
+                                shadowDistance = QualitySettings.shadowDistance,
+                                systemInfo = new
+                                {
+                                    deviceModel = SystemInfo.deviceModel,
+                                    deviceType = SystemInfo.deviceType.ToString(),
+                                    graphicsDeviceName = SystemInfo.graphicsDeviceName,
+                                    graphicsMemorySize = SystemInfo.graphicsMemorySize,
+                                    systemMemorySize = SystemInfo.systemMemorySize,
+                                    processorType = SystemInfo.processorType,
+                                    processorCount = SystemInfo.processorCount
+                                }
+                            };
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        error = ex;
+                    }
+                    finally
+                    {
+                        completed = true;
+                    }
+                });
+
+                WaitForMainThreadAction(ref completed, 10000); // 10 second timeout for complex scenes
+
+                if (error != null)
+                    throw error;
+
+                var result = new
+                {
+                    success = true,
+                    snapshot,
+                    timestamp = DateTime.UtcNow.ToString("o")
+                };
+
+                return JsonUtility.ToJson(result);
+            }
+            catch (Exception ex)
+            {
+                var result = new
+                {
+                    success = false,
+                    error = ex.Message,
+                    timestamp = DateTime.UtcNow.ToString("o")
+                };
+                return JsonUtility.ToJson(result);
+            }
+        }
+
+        private object BuildGameObjectInfo(GameObject obj, int currentDepth, int maxDepth, bool includeComponents)
+        {
+            if (currentDepth >= maxDepth || obj == null)
+                return null;
+
+            var info = new
+            {
+                name = obj.name,
+                tag = obj.tag,
+                layer = LayerMask.LayerToName(obj.layer),
+                isActive = obj.activeInHierarchy,
+                isStatic = obj.isStatic,
+                position = new { x = obj.transform.position.x, y = obj.transform.position.y, z = obj.transform.position.z },
+                rotation = new { x = obj.transform.rotation.eulerAngles.x, y = obj.transform.rotation.eulerAngles.y, z = obj.transform.rotation.eulerAngles.z },
+                scale = new { x = obj.transform.localScale.x, y = obj.transform.localScale.y, z = obj.transform.localScale.z },
+                components = includeComponents ? GetComponentNames(obj) : new string[0],
+                childCount = obj.transform.childCount,
+                children = BuildChildren(obj, currentDepth, maxDepth, includeComponents)
+            };
+
+            return info;
+        }
+
+        private string[] GetComponentNames(GameObject obj)
+        {
+            var components = obj.GetComponents<Component>();
+            var names = new List<string>();
+            foreach (var comp in components)
+            {
+                if (comp != null)
+                {
+                    names.Add(comp.GetType().Name);
+                }
+            }
+            return names.ToArray();
+        }
+
+        private object[] BuildChildren(GameObject obj, int currentDepth, int maxDepth, bool includeComponents)
+        {
+            if (currentDepth >= maxDepth - 1)
+                return new object[0];
+
+            var children = new List<object>();
+            for (int i = 0; i < obj.transform.childCount; i++)
+            {
+                var child = obj.transform.GetChild(i).gameObject;
+                if (child.activeInHierarchy)
+                {
+                    var childInfo = BuildGameObjectInfo(child, currentDepth + 1, maxDepth, includeComponents);
+                    if (childInfo != null)
+                    {
+                        children.Add(childInfo);
+                    }
+                }
+            }
+            return children.ToArray();
+        }
+
+        private object BuildUIHierarchy(int maxDepth)
+        {
+            var canvases = UnityEngine.Object.FindObjectsOfType<Canvas>();
+            var canvasList = new List<object>();
+
+            foreach (var canvas in canvases)
+            {
+                if (!canvas.gameObject.activeInHierarchy)
+                    continue;
+
+                var uiElements = new List<object>();
+                TraverseUIHierarchy(canvas.transform, uiElements, 0, maxDepth);
+
+                canvasList.Add(new
+                {
+                    name = canvas.gameObject.name,
+                    renderMode = canvas.renderMode.ToString(),
+                    sortingOrder = canvas.sortingOrder,
+                    isRootCanvas = canvas.isRootCanvas,
+                    worldCamera = canvas.worldCamera != null ? canvas.worldCamera.name : "none",
+                    elements = uiElements.ToArray()
+                });
+            }
+
+            return new { canvases = canvasList.ToArray() };
+        }
+
+        private void TraverseUIHierarchy(Transform transform, List<object> elements, int depth, int maxDepth)
+        {
+            if (depth >= maxDepth)
+                return;
+
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                var child = transform.GetChild(i);
+                if (!child.gameObject.activeInHierarchy)
+                    continue;
+
+                var rectTransform = child.GetComponent<RectTransform>();
+                var button = child.GetComponent<UnityEngine.UI.Button>();
+                var text = child.GetComponent<UnityEngine.UI.Text>();
+                var image = child.GetComponent<UnityEngine.UI.Image>();
+                var inputField = child.GetComponent<UnityEngine.UI.InputField>();
+                var toggle = child.GetComponent<UnityEngine.UI.Toggle>();
+                var slider = child.GetComponent<UnityEngine.UI.Slider>();
+                var selectable = child.GetComponent<UnityEngine.UI.Selectable>();
+
+                var elementInfo = new
+                {
+                    name = child.name,
+                    type = GetUIElementType(child.gameObject),
+                    isInteractable = selectable != null ? selectable.interactable : false,
+                    isVisible = child.gameObject.activeInHierarchy,
+                    position = rectTransform != null ? new { x = rectTransform.anchoredPosition.x, y = rectTransform.anchoredPosition.y } : null,
+                    size = rectTransform != null ? new { width = rectTransform.rect.width, height = rectTransform.rect.height } : null,
+                    text = text != null ? text.text : (inputField != null ? inputField.text : null),
+                    isToggled = toggle != null ? toggle.isOn : (bool?)null,
+                    sliderValue = slider != null ? slider.value : (float?)null,
+                    childCount = child.childCount
+                };
+
+                elements.Add(elementInfo);
+
+                // Recurse into children
+                var childElements = new List<object>();
+                TraverseUIHierarchy(child, childElements, depth + 1, maxDepth);
+            }
+        }
+
+        private string GetUIElementType(GameObject obj)
+        {
+            if (obj.GetComponent<UnityEngine.UI.Button>()) return "Button";
+            if (obj.GetComponent<UnityEngine.UI.Toggle>()) return "Toggle";
+            if (obj.GetComponent<UnityEngine.UI.Slider>()) return "Slider";
+            if (obj.GetComponent<UnityEngine.UI.InputField>()) return "InputField";
+            if (obj.GetComponent<UnityEngine.UI.Dropdown>()) return "Dropdown";
+            if (obj.GetComponent<UnityEngine.UI.Scrollbar>()) return "Scrollbar";
+            if (obj.GetComponent<UnityEngine.UI.ScrollRect>()) return "ScrollRect";
+            if (obj.GetComponent<UnityEngine.UI.Text>()) return "Text";
+            if (obj.GetComponent<UnityEngine.UI.Image>()) return "Image";
+            if (obj.GetComponent<UnityEngine.UI.RawImage>()) return "RawImage";
+            if (obj.GetComponent<Canvas>()) return "Canvas";
+            return "UIElement";
+        }
+
         #endregion
 
         #region Helper Methods
@@ -942,6 +1307,18 @@ namespace MCP.UnityTesting.Editor
             return defaultValue;
         }
 
+        private bool GetBoolArg(Dictionary<string, object> args, string key, bool defaultValue)
+        {
+            if (args.TryGetValue(key, out var value))
+            {
+                if (value is bool boolValue)
+                    return boolValue;
+                if (bool.TryParse(value?.ToString(), out var parsed))
+                    return parsed;
+            }
+            return defaultValue;
+        }
+
         #endregion
     }
 
@@ -961,5 +1338,42 @@ namespace MCP.UnityTesting.Editor
     {
         public object[] connectedGamepads;
         public int totalConnected;
+    }
+
+    [Serializable]
+    public class SceneSnapshotInfo
+    {
+        public string timestamp;
+        public SceneInfo sceneInfo;
+        public PlayModeInfo playMode;
+        public object[] hierarchy;
+        public object uiHierarchy;
+        public object[] cameras;
+        public object[] lights;
+        public object[] audioSources;
+        public object eventSystem;
+        public object inputState;
+        public object[] connectedGamepads;
+        public object performance;
+    }
+
+    [Serializable]
+    public class SceneInfo
+    {
+        public string name;
+        public string path;
+        public int buildIndex;
+        public bool isLoaded;
+        public bool isDirty;
+        public int rootCount;
+    }
+
+    [Serializable]
+    public class PlayModeInfo
+    {
+        public bool isPlaying;
+        public bool isPaused;
+        public bool isCompiling;
+        public float timeSinceStartup;
     }
 }

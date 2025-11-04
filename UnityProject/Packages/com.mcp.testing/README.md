@@ -335,6 +335,199 @@ Gets information about connected gamepads.
 }
 ```
 
+### `get_scene_snapshot`
+Captures a comprehensive snapshot of the current scene state.
+
+**This is the most powerful diagnostic tool** - it provides a complete picture of everything happening in your Unity scene at a specific moment in time.
+
+**Parameters**:
+- `includeHierarchy` (boolean, optional): Include complete GameObject hierarchy. Default: true
+- `includeComponents` (boolean, optional): Include component information for each GameObject. Default: true
+- `includeUI` (boolean, optional): Include detailed UI hierarchy with all Canvas elements. Default: true
+- `includePerformance` (boolean, optional): Include performance metrics and system info. Default: true
+- `maxDepth` (number, optional): Maximum hierarchy depth to capture (prevents overflow on deep scenes). Default: 10
+
+**Returns**: Comprehensive JSON snapshot containing:
+
+**Example**:
+```json
+{
+  "includeHierarchy": true,
+  "includeComponents": true,
+  "includeUI": true,
+  "includePerformance": true,
+  "maxDepth": 10
+}
+```
+
+**Example Response Structure**:
+```json
+{
+  "success": true,
+  "snapshot": {
+    "timestamp": "2025-11-04T12:34:56.789Z",
+
+    "sceneInfo": {
+      "name": "MainMenu",
+      "path": "Assets/Scenes/MainMenu.unity",
+      "buildIndex": 0,
+      "isLoaded": true,
+      "isDirty": false,
+      "rootCount": 12
+    },
+
+    "playMode": {
+      "isPlaying": true,
+      "isPaused": false,
+      "isCompiling": false,
+      "timeSinceStartup": 123.45
+    },
+
+    "hierarchy": [
+      {
+        "name": "GameManager",
+        "tag": "GameController",
+        "layer": "Default",
+        "isActive": true,
+        "isStatic": false,
+        "position": { "x": 0, "y": 0, "z": 0 },
+        "rotation": { "x": 0, "y": 0, "z": 0 },
+        "scale": { "x": 1, "y": 1, "z": 1 },
+        "components": ["Transform", "GameManager", "AudioSource"],
+        "childCount": 3,
+        "children": [...]
+      }
+    ],
+
+    "uiHierarchy": {
+      "canvases": [
+        {
+          "name": "MainMenuCanvas",
+          "renderMode": "ScreenSpaceOverlay",
+          "sortingOrder": 0,
+          "isRootCanvas": true,
+          "worldCamera": "none",
+          "elements": [
+            {
+              "name": "PlayButton",
+              "type": "Button",
+              "isInteractable": true,
+              "isVisible": true,
+              "position": { "x": 0, "y": 50 },
+              "size": { "width": 200, "height": 60 },
+              "text": "Play Game",
+              "childCount": 2
+            }
+          ]
+        }
+      ]
+    },
+
+    "cameras": [
+      {
+        "name": "Main Camera",
+        "isActive": true,
+        "fieldOfView": 60,
+        "orthographic": false,
+        "depth": -1,
+        "clearFlags": "Skybox",
+        "targetDisplay": 0
+      }
+    ],
+
+    "lights": [
+      {
+        "name": "Directional Light",
+        "type": "Directional",
+        "intensity": 1.0,
+        "range": 10,
+        "color": { "r": 1, "g": 0.96, "b": 0.84 }
+      }
+    ],
+
+    "audioSources": [
+      {
+        "name": "BackgroundMusic",
+        "isPlaying": true,
+        "clip": "MenuTheme",
+        "volume": 0.7,
+        "loop": true,
+        "mute": false
+      }
+    ],
+
+    "eventSystem": {
+      "isActive": true,
+      "currentSelectedGameObject": "PlayButton",
+      "firstSelectedGameObject": "PlayButton"
+    },
+
+    "inputState": {
+      "mousePosition": { "x": 960, "y": 540, "z": 0 },
+      "mousePresent": true,
+      "touchSupported": false,
+      "touchCount": 0,
+      "anyKey": false,
+      "anyKeyDown": false
+    },
+
+    "connectedGamepads": [
+      {
+        "joystickNum": 1,
+        "name": "Xbox One Controller"
+      }
+    ],
+
+    "performance": {
+      "targetFrameRate": 60,
+      "vSyncCount": 1,
+      "qualityLevel": 2,
+      "qualityLevelName": "High",
+      "pixelLightCount": 4,
+      "shadowDistance": 150,
+      "systemInfo": {
+        "deviceModel": "MacBookPro18,1",
+        "deviceType": "Desktop",
+        "graphicsDeviceName": "AMD Radeon Pro",
+        "graphicsMemorySize": 8192,
+        "systemMemorySize": 32768,
+        "processorType": "Apple M1 Pro",
+        "processorCount": 10
+      }
+    }
+  }
+}
+```
+
+**What This Tool Captures**:
+
+1. **Scene Information**: Name, path, build index, load state
+2. **Play Mode State**: Whether playing, paused, compiling
+3. **Complete GameObject Hierarchy**: All active objects with their transforms, components, and children
+4. **Detailed UI Hierarchy**: All Canvas elements with buttons, text, images, input fields, toggles, sliders, etc.
+5. **Cameras**: All active cameras with their settings (FOV, orthographic, depth, clear flags)
+6. **Lights**: All lights with type, intensity, range, color
+7. **Audio Sources**: All audio sources with playing state, clips, volume, loop settings
+8. **EventSystem**: Current selected UI element
+9. **Input State**: Current mouse position, touch support, key presses
+10. **Connected Gamepads**: All connected controllers
+11. **Performance Metrics**: Frame rate, quality settings, system information
+
+**Use Cases**:
+
+- **Debugging**: Get complete scene state when bug occurs
+- **Test Reports**: Comprehensive snapshot of test conditions
+- **State Verification**: Confirm scene is in expected state
+- **Performance Analysis**: Check quality settings and system capabilities
+- **UI Analysis**: Detailed breakdown of all UI elements and their states
+- **Before/After Comparisons**: Capture state before and after actions
+
+**Tips**:
+- Use `maxDepth` parameter to limit hierarchy depth on very complex scenes
+- Set `includeComponents: false` for faster snapshots when you only need hierarchy
+- Combine with `capture_screenshot` for visual + data analysis
+- Use this tool at the start of test sequences to understand initial state
+
 ## Usage Patterns
 
 ### Testing Menu Navigation
@@ -405,6 +598,40 @@ Prompt for Claude:
 4. Verify all three methods reach the same destinations
 5. Test edge cases (rapid inputs, simultaneous inputs)
 6. Generate comparison report with screenshots for each method"
+```
+
+### Comprehensive Scene Analysis
+
+```
+Prompt for Claude:
+
+"Perform a comprehensive analysis of the current scene:
+1. Use get_scene_snapshot to capture the complete scene state
+2. Analyze the GameObject hierarchy and identify any issues
+3. Check all UI elements for proper configuration
+4. Review camera settings
+5. Check audio sources and their states
+6. Analyze performance metrics
+7. Generate a detailed report of findings with recommendations"
+```
+
+### Bug Reporting with Full Context
+
+```
+Prompt for Claude:
+
+"I encountered a bug. Please help me document it:
+1. Use get_scene_snapshot to capture the exact scene state when the bug occurs
+2. Take a screenshot for visual reference
+3. Analyze the snapshot for potential causes (missing components, incorrect states, etc.)
+4. Generate a detailed bug report including:
+   - Scene state at time of bug
+   - All relevant GameObjects and their states
+   - UI element states
+   - Input state
+   - Performance metrics
+   - Visual screenshot
+   - Potential root causes identified"
 ```
 
 ## Editor Menu Options

@@ -340,6 +340,23 @@ namespace MCP.UnityTesting.Editor
                         },
                         required = new string[] { }
                     }
+                },
+                new Tool
+                {
+                    name = "get_scene_snapshot",
+                    description = "Captures a comprehensive snapshot of the current scene state including hierarchy, UI elements, components, cameras, performance metrics, and more. Essential for detailed game state analysis.",
+                    inputSchema = new ToolInputSchema
+                    {
+                        properties = new Dictionary<string, PropertySchema>
+                        {
+                            { "includeHierarchy", new PropertySchema { type = "boolean", description = "Include complete GameObject hierarchy (default: true)" } },
+                            { "includeComponents", new PropertySchema { type = "boolean", description = "Include component information (default: true)" } },
+                            { "includeUI", new PropertySchema { type = "boolean", description = "Include detailed UI hierarchy (default: true)" } },
+                            { "includePerformance", new PropertySchema { type = "boolean", description = "Include performance metrics (default: true)" } },
+                            { "maxDepth", new PropertySchema { type = "number", description = "Maximum hierarchy depth to capture (default: 10)" } }
+                        },
+                        required = new string[] { }
+                    }
                 }
             };
 

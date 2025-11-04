@@ -121,6 +121,7 @@ Prompt de ejemplo:
 | `send_gamepad_axis` | **Simula movimiento de sticks analógicos y triggers** |
 | `get_game_state` | Obtiene estado actual del juego (escena, UI, etc.) |
 | `get_gamepad_state` | **Detecta y obtiene info de mandos conectados** |
+| **`get_scene_snapshot`** | **📊 Captura completa del estado de la escena (jerarquía, UI, componentes, performance, etc.)** |
 | `navigate_menu` | Navega menús usando teclado (up/down/left/right/enter) |
 | `navigate_menu_gamepad` | **Navega menús usando mando (stick + botones A/B)** |
 
