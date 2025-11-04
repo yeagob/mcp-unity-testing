@@ -1,0 +1,28 @@
+{
+  "mcpServers": {
+    "unity-testing": {
+      "command": "/Applications/Unity/Hub/Editor/2022.3.0f1/Unity.app/Contents/MacOS/Unity",
+      "args": [
+        "-batchmode",
+        "-nographics",
+        "-projectPath",
+        "/Users/yourname/Projects/YourUnityProject",
+        "-executeMethod",
+        "MCP.UnityTesting.Editor.MCPServerManager.StartServer",
+        "-logFile",
+        "-"
+      ],
+      "env": {
+        "UNITY_LOG_LEVEL": "Debug"
+      }
+    },
+    "unity-testing-manual": {
+      "comment": "Alternative config for manually started Unity Editor (advanced usage)",
+      "command": "socat",
+      "args": [
+        "STDIO",
+        "TCP:localhost:9000"
+      ]
+    }
+  }
+}

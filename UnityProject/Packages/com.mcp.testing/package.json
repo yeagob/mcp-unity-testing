@@ -1,0 +1,21 @@
+{
+  "name": "com.mcp.testing",
+  "version": "0.1.0",
+  "displayName": "MCP Unity Testing Server",
+  "description": "Model Context Protocol server for Unity automated testing. Allows AI models to interact with Unity for game testing automation.",
+  "unity": "2021.3",
+  "keywords": [
+    "mcp",
+    "testing",
+    "automation",
+    "ai",
+    "model-context-protocol"
+  ],
+  "author": {
+    "name": "Santiago Dopazo Hilario (@SantiagoGameLover)",
+    "email": "contact@montsenyxr.com",
+    "url": "https://github.com/SantiagoGameLover"
+  },
+  "company": "Montseny XR",
+  "dependencies": {}
+}

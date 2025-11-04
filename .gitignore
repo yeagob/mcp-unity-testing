@@ -97,3 +97,23 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+# MCP Unity Testing specific
+Screenshots/
+claude_desktop_config.json
+
+# .NET build outputs
+MCP.UnityServer/bin/
+MCP.UnityServer/obj/
+
+# OS specific
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
